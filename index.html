@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OnePost - Post to All Social Media in 1 Click</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        // Supabase client
+        const SUPABASE_URL = 'https://ffnlzagpzqpssocejhrz.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_MF-4p7ql__hrXlCDdgc1mw_t6x8Mipp';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const platforms = [
+            { id: 'twitter', name: 'X/Twitter', color: 'bg-blue-500', icon: '𝕏' },
+            { id: 'facebook', name: 'Facebook', color: 'bg-blue-600', icon: 'f' },
+            { id: 'instagram', name: 'Instagram', color: 'bg-pink-500', icon: '📷' },
+            { id: 'linkedin', name: 'LinkedIn', color: 'bg-blue-700', icon: 'in' },
+            { id: 'telegram', name: 'Telegram', color: 'bg-sky-500', icon: '✈️' },
+            { id: 'youtube', name: 'YouTube', color: 'bg-red-600', icon: '▶' }
+        ];
+
+        function App() {
+            const [user, setUser] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [postContent, setPostContent] = useState('');
+            const [selectedPlatforms, setSelectedPlatforms] = useState([]);
+            const [posting, setPosting] = useState(false);
+            const [postResults, setPostResults] = useState([]);
+
+            useEffect(() => {
+                checkUser();
+            }, []);
+
+            async function checkUser() {
+                const { data: { session } } = await supabase.auth.getSession();
+                setUser(session?.user ?? null);
+                setLoading(false);
+            }
+
+            async function signUp() {
+                const { error } = await supabase.auth.signUp({ email, password });
+                if (!error) alert('Check your email for confirmation!');
+                else alert(error.message);
+            }
+
+            async function signIn() {
+                const { error } = await supabase.auth.signIn({ email, password });
+                if (error) alert(error.message);
+            }
+
+            async function signOut() {
+                await supabase.auth.signOut();
+                setUser(null);
+            }
+
+            function togglePlatform(platformId) {
+                setSelectedPlatforms(prev => 
+                    prev.includes(platformId) 
+                        ? prev.filter(p => p !== platformId)
+                        : [...prev, platformId]
+                );
+            }
+
+            async function postToSocialMedia() {
+                if (!postContent.trim() || selectedPlatforms.length === 0) {
+                    alert('Please enter content and select at least one platform!');
+                    return;
+                }
+
+                setPosting(true);
+                setPostResults([]);
+                
+                // Simulate posting to each platform
+                for (const platformId of selectedPlatforms) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    setPostResults(prev => [
+                        ...prev,
+                        { platform: platformId, status: 'success' }
+                    ]);
+                }
+
+                setPosting(false);
+                alert('Posted successfully to ' + selectedPlatforms.length + ' platforms!');
+            }
+
+            if (loading) {
+                return <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-600 to-blue-500">
+                    <div className="text-white text-2xl">Loading...</div>
+                </div>;
+            }
+
+            if (!user) {
+                return (
+                    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-600 to-blue-500 p-4">
+                        <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+                            <h1 className="text-4xl font-bold text-center mb-2 text-gray-800">OnePost</h1>
+                            <p className="text-center text-gray-600 mb-8">Post to all social media in 1 click</p>
+                            <input
+                                type="email"
+                                placeholder="Email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="w-full px-4 py-3 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            />
+                            <input
+                                type="password"
+                                placeholder="Password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="w-full px-4 py-3 mb-6 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            />
+                            <button
+                                onClick={signIn}
+                                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-lg mb-3 transition"
+                            >
+                                Sign In
+                            </button>
+                            <button
+                                onClick={signUp}
+                                className="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 rounded-lg transition"
+                            >
+                                Sign Up
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-purple-600 to-blue-500 p-4">
+                    <div className="max-w-4xl mx-auto">
+                        <div className="bg-white rounded-2xl shadow-2xl p-6 mb-6">
+                            <div className="flex justify-between items-center mb-6">
+                                <h1 className="text-3xl font-bold text-gray-800">OnePost Dashboard</h1>
+                                <button onClick={signOut} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition">
+                                    Sign Out
+                                </button>
+                            </div>
+                            
+                            <div className="mb-6">
+                                <h2 className="text-xl font-semibold mb-3 text-gray-700">Select Platforms</h2>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                    {platforms.map(platform => (
+                                        <button
+                                            key={platform.id}
+                                            onClick={() => togglePlatform(platform.id)}
+                                            className={`p-4 rounded-lg font-semibold text-white transition transform ${
+                                                selectedPlatforms.includes(platform.id) 
+                                                    ? `${platform.color} scale-105 shadow-lg` 
+                                                    : 'bg-gray-300 text-gray-600'
+                                            }`}
+                                        >
+                                            <span className="text-2xl mr-2">{platform.icon}</span>
+                                            {platform.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="mb-6">
+                                <h2 className="text-xl font-semibold mb-3 text-gray-700">Create Your Post</h2>
+                                <textarea
+                                    value={postContent}
+                                    onChange={(e) => setPostContent(e.target.value)}
+                                    placeholder="What do you want to share?"
+                                    rows="5"
+                                    className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                />
+                            </div>
+
+                            <button
+                                onClick={postToSocialMedia}
+                                disabled={posting || selectedPlatforms.length === 0}
+                                className="w-full bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white font-bold py-4 rounded-lg transition text-xl disabled:opacity-50"
+                            >
+                                {posting ? '🚀 Posting...' : `📢 Post to ${selectedPlatforms.length} Platform${selectedPlatforms.length !== 1 ? 's' : ''}`}
+                            </button>
+
+                            {postResults.length > 0 && (
+                                <div className="mt-6">
+                                    <h3 className="text-lg font-semibold mb-3 text-gray-700">Post Results</h3>
+                                    <div className="space-y-2">
+                                        {postResults.map((result, idx) => (
+                                            <div key={idx} className="flex items-center justify-between bg-green-50 p-3 rounded-lg">
+                                                <span className="font-medium text-gray-700">
+                                                    {platforms.find(p => p.id === result.platform)?.name}
+                                                </span>
+                                                <span className="text-green-600 font-semibold">✓ Success</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="text-center text-white text-sm">
+                            <p>OnePost © 2026 - Post everywhere, instantly</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
